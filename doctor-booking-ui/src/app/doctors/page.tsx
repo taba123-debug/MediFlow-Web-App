@@ -1,11 +1,27 @@
-import { doctors } from "@/data/mock-doctors";
-import { specialties } from "@/data/mock-specialties";
 import { Navbar } from "@/components/layout/navbar";
 import { DoctorCard } from "@/components/doctors/doctor-card";
-import { FilterPanel } from "@/components/common/filter-panel";
 import { Badge } from "@/components/ui/badge";
+import { listDoctors } from "@/lib/doctors";
 
-export default function DoctorsPage() {
+export default async function DoctorsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    search?: string;
+    specialty?: string;
+    location?: string;
+  }>;
+}) {
+  const filters = (await searchParams) || {};
+  const doctors = await listDoctors({
+    search: filters.search,
+    specialty: filters.specialty,
+    location: filters.location,
+  });
+  const specialties = Array.from(
+    new Set(doctors.map((doctor) => doctor.specialty).filter(Boolean)),
+  );
+
   return (
     <>
       <Navbar />
@@ -19,7 +35,7 @@ export default function DoctorsPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
             Compare doctors, explore specialties, and move into the booking flow with
-            one click. {/* TODO: connect filters and doctor search to backend API */}
+            one click.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {specialties.map((specialty) => (
@@ -29,7 +45,6 @@ export default function DoctorsPage() {
             ))}
           </div>
         </section>
-        <FilterPanel />
         <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {doctors.map((doctor) => (
             <DoctorCard key={doctor.id} doctor={doctor} />

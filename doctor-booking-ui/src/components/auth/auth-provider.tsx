@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { resolveApiInput } from "@/lib/api";
 import {
   clearStoredSession,
   fetchCurrentUser,
@@ -243,12 +244,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function authFetch(input: RequestInfo | URL, init?: RequestInit) {
     const headers = new Headers(init?.headers);
+    const resolvedInput = resolveApiInput(input);
 
     if (accessToken) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    const response = await fetch(input, {
+    const response = await fetch(resolvedInput, {
       ...init,
       headers,
     });
@@ -266,7 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const retryHeaders = new Headers(init?.headers);
     retryHeaders.set("Authorization", `Bearer ${nextTokens.accessToken}`);
 
-    return fetch(input, {
+    return fetch(resolvedInput, {
       ...init,
       headers: retryHeaders,
     });

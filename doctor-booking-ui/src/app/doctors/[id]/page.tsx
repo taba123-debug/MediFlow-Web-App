@@ -2,12 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Calendar, Globe, MapPin, Medal, Star } from "lucide-react";
-import { doctors } from "@/data/mock-doctors";
 import { Navbar } from "@/components/layout/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RatingStars } from "@/components/common/rating-stars";
+import { getDoctorById } from "@/lib/doctors";
 import { formatDate } from "@/lib/utils";
 
 export default async function DoctorDetailPage({
@@ -16,7 +16,13 @@ export default async function DoctorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const doctor = doctors.find((item) => item.id === id);
+  let doctor = null;
+
+  try {
+    doctor = await getDoctorById(id);
+  } catch {
+    doctor = null;
+  }
 
   if (!doctor) {
     notFound();
@@ -85,7 +91,7 @@ export default async function DoctorDetailPage({
                 {doctor.availability.map((day) => (
                   <div key={day.day} className="rounded-2xl bg-slate-50 p-4">
                     <p className="font-semibold text-slate-900">{day.day}</p>
-                    <p className="mt-2">{day.slots.join("  •  ")}</p>
+                    <p className="mt-2">{day.slots.join(" • ")}</p>
                   </div>
                 ))}
               </div>
@@ -137,7 +143,10 @@ export default async function DoctorDetailPage({
               </CardHeader>
               <CardContent className="space-y-4">
                 {doctor.reviews.map((review) => (
-                  <div key={`${review.patientName}-${review.date}`} className="rounded-2xl border border-slate-100 p-4">
+                  <div
+                    key={`${review.patientName}-${review.date}`}
+                    className="rounded-2xl border border-slate-100 p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-semibold text-slate-900">{review.patientName}</p>
@@ -153,7 +162,9 @@ export default async function DoctorDetailPage({
           </div>
           <Card className="h-fit">
             <CardHeader>
-              <h2 className="text-2xl font-semibold text-slate-950">Why patients choose {doctor.name.split(" ")[1]}</h2>
+              <h2 className="text-2xl font-semibold text-slate-950">
+                Why patients choose {doctor.name.split(" ")[1]}
+              </h2>
             </CardHeader>
             <CardContent className="space-y-4 text-sm leading-7 text-slate-600">
               <p>Fast booking experience with clear availability and trusted reviews.</p>
