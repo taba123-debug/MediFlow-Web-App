@@ -9,6 +9,31 @@ This repository is intentionally frontend-only.
 - No database connection
 - Mock data only
 
+## Environment Variables
+
+To connect this UI to your backend, create a `.env.local` file in the project root.
+
+Example:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+```
+
+The auth integration currently uses this backend API list:
+
+```ts
+POST /auth/register/patient
+POST /auth/register/doctor
+POST /auth/login
+POST /auth/refresh
+GET /auth/me
+POST /auth/logout
+```
+
+Because the frontend needs this value in the browser, the variable must use the `NEXT_PUBLIC_` prefix.
+
+For local development, keep the real values in `.env.local`. The committed `.env.example` file is only a template.
+
 The project focuses on complete screen coverage, reusable UI structure, and clean healthcare SaaS UX.
 
 ## Overview

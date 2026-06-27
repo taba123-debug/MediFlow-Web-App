@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { HeartPulse, Menu, PhoneCall } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
+import { getDashboardPathForRole } from "@/lib/auth";
 
 const links = [
   { href: "/", label: "Home" },
@@ -11,6 +15,14 @@ const links = [
 ];
 
 export function Navbar() {
+  const { isAuthenticated, isLoading, role, logout, user } = useAuth();
+  const dashboardHref = role ? getDashboardPathForRole(role) : "/auth/login";
+  const displayName =
+    user?.name ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.email ||
+    "Account";
+
   return (
     <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl">
       <div className="container-shell flex h-18 items-center justify-between gap-4 py-4">
@@ -43,12 +55,23 @@ export function Navbar() {
             <PhoneCall className="mr-2 inline h-4 w-4" />
             24/7 care line
           </div>
-          <Link href="/auth/login">
-            <Button variant="outline">Sign in</Button>
-          </Link>
-          <Link href="/auth/register">
-            <Button>Get Started</Button>
-          </Link>
+          {isLoading ? null : isAuthenticated ? (
+            <>
+              <Link href={dashboardHref}>
+                <Button variant="outline">{displayName}</Button>
+              </Link>
+              <Button onClick={() => void logout()}>Logout</Button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth/login">
+                <Button variant="outline">Sign in</Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button>Get Started</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="rounded-xl border border-slate-200 p-2 md:hidden">
