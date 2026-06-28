@@ -1,5 +1,84 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 
+function flattenValidationErrors(source: Record<string, unknown>) {
+  const fieldErrors = source.errors;
+
+  if (!fieldErrors || typeof fieldErrors !== "object") {
+    return [];
+  }
+
+  return Object.values(fieldErrors).flatMap((value) => {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === "string");
+    }
+
+    if (typeof value === "string") {
+      return [value];
+    }
+
+    return [];
+  });
+}
+
+export function extractApiErrorMessage(payload: unknown, fallback = "Request failed.") {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const source = payload as Record<string, unknown>;
+  const validationErrors = flattenValidationErrors(source);
+
+  if (validationErrors.length > 0) {
+    return validationErrors.join(", ");
+  }
+
+  if (Array.isArray(source.message)) {
+    const messages = source.message.filter((item): item is string => typeof item === "string");
+    if (messages.length > 0) {
+      return messages.join(", ");
+    }
+  }
+
+  if (typeof source.message === "string" && source.message) {
+    return source.message;
+  }
+
+  if (typeof source.error === "string" && source.error) {
+    return source.error;
+  }
+
+  return fallback;
+}
+
+export function extractApiFieldErrors(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+
+  const source = payload as Record<string, unknown>;
+  const fieldErrors = source.errors;
+
+  if (!fieldErrors || typeof fieldErrors !== "object") {
+    return {};
+  }
+
+  return Object.entries(fieldErrors).reduce<Record<string, string>>((result, [key, value]) => {
+    if (Array.isArray(value)) {
+      const messages = value.filter((item): item is string => typeof item === "string");
+      if (messages.length > 0) {
+        result[key] = messages.join(", ");
+      }
+      return result;
+    }
+
+    if (typeof value === "string" && value) {
+      result[key] = value;
+    }
+
+    return result;
+  }, {});
+}
+
 export function getApiBaseUrl() {
   if (!apiBaseUrl) {
     throw new Error(
@@ -42,14 +121,7 @@ export async function fetchApiJson<T>(
   const payload = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    const message =
-      payload &&
-      typeof payload === "object" &&
-      "message" in payload &&
-      typeof payload.message === "string"
-        ? payload.message
-        : "Request failed.";
-    throw new Error(message);
+    throw new Error(extractApiErrorMessage(payload));
   }
 
   return payload as T;

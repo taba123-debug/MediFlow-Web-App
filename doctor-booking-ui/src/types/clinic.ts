@@ -4,5 +4,7 @@ export type Clinic = {
   address?: string;
   description?: string;
   location?: string;
+  city?: string;
+  isActive?: boolean;
   [key: string]: unknown;
 };

@@ -21,6 +21,13 @@ export function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+export function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export function initials(name: string) {
   return name
     .split(" ")

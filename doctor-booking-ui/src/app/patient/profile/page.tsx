@@ -5,41 +5,53 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { getPatientById, updatePatientById } from "@/lib/patients";
-import type { PatientProfile } from "@/types/patient";
+import {
+  getPatientProfile,
+  updatePatientProfile,
+  type PatientProfileResponse,
+} from "@/lib/patient-module";
 
 export default function PatientProfilePage() {
-  const { authFetch, user } = useAuth();
-  const [profile, setProfile] = useState<PatientProfile | null>(null);
+  const { authFetch } = useAuth();
+  const [profile, setProfile] = useState<PatientProfileResponse | null>(null);
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
-    phoneNumber: "",
+    phone: "",
     location: "",
-    notes: "",
+    avatarUrl: "",
+    dateOfBirth: "",
+    gender: "MALE" as "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY",
+    bloodGroup: "",
+    address: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const loadProfile = useCallback(async (id: string) => {
+  const loadProfile = useCallback(async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await getPatientById(authFetch, id);
+      const response = await getPatientProfile(authFetch);
       setProfile(response);
       setForm({
-        firstName: response.firstName || "",
-        lastName: response.lastName || "",
-        email: response.email || "",
-        phoneNumber: response.phoneNumber || "",
-        location: response.location || "",
-        notes: response.notes || "",
+        name: response.user.name || "",
+        email: response.user.email || "",
+        phone: response.user.phone || "",
+        location: response.user.location || "",
+        avatarUrl: response.user.avatarUrl || "",
+        dateOfBirth: response.patientProfile.dateOfBirth || "",
+        gender: response.patientProfile.gender || "MALE",
+        bloodGroup: response.patientProfile.bloodGroup || "",
+        address: response.patientProfile.address || "",
+        emergencyContactName: response.patientProfile.emergencyContactName || "",
+        emergencyContactPhone: response.patientProfile.emergencyContactPhone || "",
       });
     } catch (loadError) {
       setError(
@@ -53,36 +65,31 @@ export default function PatientProfilePage() {
   }, [authFetch]);
 
   useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
     const timer = window.setTimeout(() => {
-      void loadProfile(String(user.id));
+      void loadProfile();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [loadProfile, user?.id]);
+  }, [loadProfile]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!profile?.id) {
-      return;
-    }
-
     setIsSaving(true);
     setError("");
     setSuccess("");
 
     try {
-      const updatedProfile = await updatePatientById(authFetch, profile.id, {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phoneNumber: form.phoneNumber,
+      const updatedProfile = await updatePatientProfile(authFetch, {
+        name: form.name,
+        phone: form.phone,
         location: form.location,
-        notes: form.notes,
+        avatarUrl: form.avatarUrl || undefined,
+        dateOfBirth: form.dateOfBirth,
+        gender: form.gender,
+        bloodGroup: form.bloodGroup,
+        address: form.address,
+        emergencyContactName: form.emergencyContactName,
+        emergencyContactPhone: form.emergencyContactPhone,
       });
 
       setProfile(updatedProfile);
@@ -103,7 +110,7 @@ export default function PatientProfilePage() {
       <PageHeader
         eyebrow="Patient profile"
         title="Keep your personal and care details up to date"
-        description="This profile now loads from `GET /patients/:id` and saves through `PATCH /patients/:id`."
+        description="This profile now loads from `GET /patient/profile` and saves through `PATCH /patient/profile`."
       />
       {error ? (
         <Card>
@@ -125,45 +132,28 @@ export default function PatientProfilePage() {
           ) : profile ? (
             <form onSubmit={handleSubmit} className="grid gap-5 md:grid-cols-2">
               <label className="space-y-2 text-sm text-slate-600">
-                <span>First name</span>
+                <span>Full name</span>
                 <Input
-                  value={form.firstName}
+                  value={form.name}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, firstName: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="space-y-2 text-sm text-slate-600">
-                <span>Last name</span>
-                <Input
-                  value={form.lastName}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, lastName: event.target.value }))
+                    setForm((current) => ({ ...current, name: event.target.value }))
                   }
                 />
               </label>
               <label className="space-y-2 text-sm text-slate-600">
                 <span>Email</span>
-                <Input
-                  value={form.email}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, email: event.target.value }))
-                  }
-                />
+                <Input value={form.email} disabled />
               </label>
               <label className="space-y-2 text-sm text-slate-600">
                 <span>Phone</span>
                 <Input
-                  value={form.phoneNumber}
+                  value={form.phone}
                   onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      phoneNumber: event.target.value,
-                    }))
+                    setForm((current) => ({ ...current, phone: event.target.value }))
                   }
                 />
               </label>
-              <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+              <label className="space-y-2 text-sm text-slate-600">
                 <span>Location</span>
                 <Input
                   value={form.location}
@@ -173,13 +163,82 @@ export default function PatientProfilePage() {
                 />
               </label>
               <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
-                <span>Health notes</span>
-                <Textarea
-                  value={form.notes}
+                <span>Avatar URL</span>
+                <Input
+                  value={form.avatarUrl}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, notes: event.target.value }))
+                    setForm((current) => ({ ...current, avatarUrl: event.target.value }))
                   }
-                  placeholder="Allergies, emergency contacts, or care preferences."
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Date of birth</span>
+                <Input
+                  type="date"
+                  value={form.dateOfBirth}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, dateOfBirth: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Gender</span>
+                <select
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none"
+                  value={form.gender}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      gender: event.target.value as typeof form.gender,
+                    }))
+                  }
+                >
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                  <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                </select>
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Blood group</span>
+                <Input
+                  value={form.bloodGroup}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, bloodGroup: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+                <span>Address</span>
+                <Input
+                  value={form.address}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, address: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Emergency contact name</span>
+                <Input
+                  value={form.emergencyContactName}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      emergencyContactName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Emergency contact phone</span>
+                <Input
+                  value={form.emergencyContactPhone}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      emergencyContactPhone: event.target.value,
+                    }))
+                  }
                 />
               </label>
               <Button className="md:col-span-2 md:w-fit" disabled={isSaving}>

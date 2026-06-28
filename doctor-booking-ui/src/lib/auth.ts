@@ -1,4 +1,4 @@
-import { buildApiUrl } from "@/lib/api";
+import { buildApiUrl, extractApiErrorMessage } from "@/lib/api";
 
 export type AuthRole = "ADMIN" | "DOCTOR" | "PATIENT";
 
@@ -18,13 +18,37 @@ export type AuthTokens = {
   refreshToken: string;
 };
 
-export type RegisterPayload = {
-  firstName: string;
-  lastName: string;
+export type RegisterPatientPayload = {
+  name: string;
   email: string;
   password: string;
-  phoneNumber: string;
+  phone: string;
+  location: string;
+  dateOfBirth: string;
+  gender: "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+  bloodGroup: string;
+  address: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
 };
+
+export type RegisterDoctorPayload = {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  location: string;
+  specialtyId: string;
+  clinicId?: string;
+  licenseNumber: string;
+  experienceYears: number;
+  consultationFee: number;
+  qualification: string;
+  about: string;
+  isVerified: boolean;
+};
+
+export type RegisterPayload = RegisterPatientPayload | RegisterDoctorPayload;
 
 type ApiEnvelope<T> = {
   message?: string;
@@ -52,19 +76,7 @@ export const authStorageKeys = {
 };
 
 function extractMessage(payload: ApiEnvelope<unknown> | null) {
-  if (!payload) {
-    return null;
-  }
-
-  if (typeof payload.message === "string" && payload.message) {
-    return payload.message;
-  }
-
-  if (typeof payload.error === "string" && payload.error) {
-    return payload.error;
-  }
-
-  return null;
+  return extractApiErrorMessage(payload, "");
 }
 
 function normalizeRole(value: unknown): AuthRole | null {
@@ -214,7 +226,7 @@ export async function registerRequest(
   return {
     ok: parsed.ok,
     status: parsed.status,
-    message: parsed.message,
+    message: parsed.message || "Request completed successfully.",
     user: extractUser(parsed.payload as ApiEnvelope<AuthUser> | null),
   };
 }

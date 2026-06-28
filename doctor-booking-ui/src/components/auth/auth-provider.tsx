@@ -22,6 +22,8 @@ import {
   type AuthRole,
   type AuthTokens,
   type AuthUser,
+  type RegisterDoctorPayload,
+  type RegisterPatientPayload,
   type RegisterPayload,
 } from "@/lib/auth";
 
@@ -41,7 +43,7 @@ type AuthContextValue = {
   login: (credentials: { email: string; password: string }) => Promise<LoginResult>;
   register: (
     role: "PATIENT" | "DOCTOR",
-    payload: RegisterPayload,
+    payload: RegisterPatientPayload | RegisterDoctorPayload,
   ) => Promise<{ ok: boolean; message: string }>;
   logout: () => Promise<void>;
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;

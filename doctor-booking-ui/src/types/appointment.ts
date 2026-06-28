@@ -3,7 +3,9 @@ export type AppointmentStatus =
   | "pending"
   | "completed"
   | "cancelled"
-  | "rescheduled";
+  | "rescheduled"
+  | "rejected"
+  | "no_show";
 
 export type Appointment = {
   id: string;
